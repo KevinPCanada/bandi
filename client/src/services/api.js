@@ -1,50 +1,39 @@
+// --- API Configuration ---
+// Defines the base URL for the deployed backend.
+// This allows for easy updates if the backend URL changes in the future.
+const API_BASE_URL = 'https://api.bandismartcards.com/api';
+
+// An object that centralizes all API communication functions for the application.
 export const api = {
-  // --- Authentication ---
+  // --- Authentication Functions ---
   register: async (userData) => {
     try {
-      const response = await fetch(`/api/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
       });
-
       if (response.ok) {
-        const data = await response.json();
-        return { success: true, data };
-      } else {
-        const errorText = await response.text();
-        return {
-          success: false,
-          error:
-            errorText || `Error: ${response.status} ${response.statusText}`,
-        };
+        return { success: true, data: await response.json() };
       }
+      return { success: false, error: await response.text() };
     } catch (error) {
-      console.error("Full register error:", error);
-      return { success: false, error: "A network or server error occurred." };
+      console.error("Register error:", error);
+      return { success: false, error: "A network error occurred." };
     }
   },
 
   login: async (credentials) => {
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: credentials.username,
-          password: credentials.password,
-        }),
+        body: JSON.stringify(credentials),
       });
-
       if (response.ok) {
-        const user = await response.json();
-        return { success: true, user };
-      } else {
-        const errorText = await response.text();
-        return { success: false, error: errorText };
+        return { success: true, user: await response.json() };
       }
+      return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Login error:", error);
       return { success: false, error: "A network error occurred." };
@@ -53,51 +42,34 @@ export const api = {
 
   logout: async () => {
     try {
-      const response = await fetch(`/api/auth/logout`, {
-        method: "POST",
-      });
-
-      if (response.ok) {
-        return { success: true };
-      } else {
-        return { success: false, error: "Logout failed" };
-      }
+      await fetch(`${API_BASE_URL}/auth/logout`, { method: "POST" });
+      return { success: true };
     } catch (error) {
-      console.error("Full logout error:", error);
-      return { success: false, error: "A network or server error occurred." };
+      console.error("Logout error:", error);
+      return { success: false, error: "A network error occurred." };
     }
   },
 
   loginAsGuest: async () => {
     try {
-      const response = await fetch('/api/auth/guest', {
-        method: 'POST',
-      });
-
+      const response = await fetch(`${API_BASE_URL}/auth/guest`, { method: 'POST' });
       if (response.ok) {
-        const user = await response.json();
-        return { success: true, user };
-      } else {
-        const errorText = await response.text();
-        return { success: false, error: errorText };
+        return { success: true, user: await response.json() };
       }
+      return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Guest login error:", error);
       return { success: false, error: "A network error occurred." };
     }
   },
 
-    deleteAccount: async () => {
+  deleteAccount: async () => {
     try {
-      const response = await fetch(`/api/users/profile`, {
-        method: "DELETE",
-      });
+      const response = await fetch(`${API_BASE_URL}/users/profile`, { method: "DELETE" });
       if (response.ok) {
         return { success: true };
-      } else {
-        const errorText = await response.text();
-        return { success: false, error: errorText };
       }
+      return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Delete account error:", error);
       return { success: false, error: "A network error occurred." };
@@ -107,14 +79,11 @@ export const api = {
   // --- Deck Functions ---
   getMyDecks: async () => {
     try {
-      const response = await fetch("/api/decks");
+      const response = await fetch(`${API_BASE_URL}/decks`);
       if (response.ok) {
-        const data = await response.json();
-        return { success: true, data };
-      } else {
-        const errorText = await response.text();
-        return { success: false, error: errorText };
+        return { success: true, data: await response.json() };
       }
+      return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Get decks error:", error);
       return { success: false, error: "A network error occurred." };
@@ -123,14 +92,11 @@ export const api = {
 
   getDeckById: async (id) => {
     try {
-      const response = await fetch(`/api/decks/${id}`);
+      const response = await fetch(`${API_BASE_URL}/decks/${id}`);
       if (response.ok) {
-        const data = await response.json();
-        return { success: true, data };
-      } else {
-        const errorText = await response.text();
-        return { success: false, error: errorText };
+        return { success: true, data: await response.json() };
       }
+      return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Get deck by ID error:", error);
       return { success: false, error: "A network error occurred." };
@@ -139,46 +105,22 @@ export const api = {
 
   createDeck: async (deckData) => {
     try {
-      const response = await fetch("/api/decks", {
+      const response = await fetch(`${API_BASE_URL}/decks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(deckData),
       });
       const data = await response.json();
-      if (response.ok) {
-        return { success: true, data };
-      } else {
-        return {
-          success: false,
-          error: data.message || "Failed to create deck",
-        };
-      }
+      return response.ok ? { success: true, data } : { success: false, error: data.message };
     } catch (error) {
       console.error("Create deck error:", error);
       return { success: false, error: "A network error occurred." };
     }
   },
 
-  deleteDeck: async (deckId) => {
-    try {
-      const response = await fetch(`/api/decks/${deckId}`, {
-        method: "DELETE",
-      });
-      if (response.ok) {
-        return { success: true };
-      } else {
-        const errorText = await response.text();
-        return { success: false, error: errorText };
-      }
-    } catch (error) {
-      console.error("Delete deck error:", error);
-      return { success: false, error: "A network error occurred." };
-    }
-  },
-
   updateDeck: async (deckId, deckData) => {
     try {
-      const response = await fetch(`/api/decks/${deckId}`, {
+      const response = await fetch(`${API_BASE_URL}/decks/${deckId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(deckData),
@@ -191,18 +133,29 @@ export const api = {
     }
   },
 
+  deleteDeck: async (deckId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/decks/${deckId}`, { method: "DELETE" });
+      if (response.ok) {
+        return { success: true };
+      }
+      return { success: false, error: await response.text() };
+    } catch (error) {
+      console.error("Delete deck error:", error);
+      return { success: false, error: "A network error occurred." };
+    }
+  },
+
   // --- Card Functions ---
   addCard: async (cardData) => {
     try {
-      const response = await fetch("/api/cards", {
+      const response = await fetch(`${API_BASE_URL}/cards`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cardData),
       });
       const data = await response.json();
-      return response.ok
-        ? { success: true, data }
-        : { success: false, error: data.message };
+      return response.ok ? { success: true, data } : { success: false, error: data.message };
     } catch (error) {
       console.error("Add card error:", error);
       return { success: false, error: "A network error occurred." };
@@ -211,15 +164,13 @@ export const api = {
 
   updateCard: async (cardId, cardData) => {
     try {
-      const response = await fetch(`/api/cards/${cardId}`, {
+      const response = await fetch(`${API_BASE_URL}/cards/${cardId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cardData),
       });
       const data = await response.json();
-      return response.ok
-        ? { success: true, data }
-        : { success: false, error: data.message };
+      return response.ok ? { success: true, data } : { success: false, error: data.message };
     } catch (error) {
       console.error("Update card error:", error);
       return { success: false, error: "A network error occurred." };
@@ -228,13 +179,9 @@ export const api = {
 
   deleteCard: async (cardId) => {
     try {
-      const response = await fetch(`/api/cards/${cardId}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(`${API_BASE_URL}/cards/${cardId}`, { method: "DELETE" });
       const data = await response.json();
-      return response.ok
-        ? { success: true, data }
-        : { success: false, error: data.message };
+      return response.ok ? { success: true, data } : { success: false, error: data.message };
     } catch (error) {
       console.error("Delete card error:", error);
       return { success: false, error: "A network error occurred." };
@@ -244,31 +191,22 @@ export const api = {
   // --- AI Functions ---
   generateSentenceStem: async (card, otherOptions) => {
     try {
-      const response = await fetch("/api/gemini/generate-stem", {
+      const response = await fetch(`${API_BASE_URL}/gemini/generate-stem`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           front: card.front,
           back: card.back,
           otherOptions: otherOptions,
         }),
       });
-
       if (response.ok) {
-        const data = await response.json();
-        return { success: true, data };
-      } else {
-        const errorText = await response.text();
-        return { success: false, error: errorText };
+        return { success: true, data: await response.json() };
       }
+      return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Generate stem error:", error);
-      return {
-        success: false,
-        error: "A network error occurred while generating the question.",
-      };
+      return { success: false, error: "A network error occurred." };
     }
   },
 };

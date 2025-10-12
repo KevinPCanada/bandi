@@ -1,0 +1,41 @@
+# Ignore OS-generated files
+
+.DS_Store
+Thumbs.db
+# Ignore logs from any directory
+
+logs
+.log
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Ignore editor-specific directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+.ntvs
+*.njsproj
+*.sln
+*.sw?
+# Ignore dependency directories in all subfolders. This is a crucial rule for both /client and /api.
+
+node_modules/
+# Ignore build output folders from the client
+
+/client/dist
+/client/dist-ssr
+/client/.vite
+
+# --- CRITICAL: Ignore all environment files in any directory ---
+
+# This rule prevents secret keys from ever being uploaded to GitHub.
+
+# It covers .env, .env.local, etc., in both the /client and /api folders.
+
+.env
+.env.*
+*.local

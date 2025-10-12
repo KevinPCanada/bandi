@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { useAuth } from "../context/AuthContext";
 import { cn } from "../lib/utils";
 
+
 export function Header({ className }) {
   // Gets user state from AuthContext and navigation functionality.
   const { user, logout } = useAuth();

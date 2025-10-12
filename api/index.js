@@ -22,11 +22,27 @@ connectDB();
 
 // --- CORS Configuration ---
 // Configures Cross-Origin Resource Sharing to allow the live frontend to make requests to this backend. This is a crucial security step.
+const allowedOrigins = [
+    'https://www.bandismartcards.com',
+    'https://bandismartcards.com'
+];
+
 const corsOptions = {
-    origin: 'https://www.bandismartcards.com', // Only allows requests from your frontend domain.
-    credentials: true, // Allows cookies to be sent with requests.
+    // The origin is now a function. It checks if the request's origin
+    // is in our list of allowed domains.
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true,
 };
 app.use(cors(corsOptions));
+
 
 // --- Middleware Configuration ---
 // Configures the server to use necessary middleware for handling requests including parsing JSON, URL-encoded data, and cookies.

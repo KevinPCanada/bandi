@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import { Header } from "./Header";
+import { Header } from "@/components/Header.jsx";
 
 // The MainLayout component is now responsible for rendering the animated background.
 const MainLayout = () => {

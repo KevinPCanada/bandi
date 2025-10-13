@@ -24,23 +24,22 @@ connectDB();
 // Configures Cross-Origin Resource Sharing to allow the live frontend to make requests to this backend. This is a crucial security step.
 const allowedOrigins = [
     'https://www.bandismartcards.com',
-    'https://bandismartcards.com'
+    'https://bandismartcards.com',
+    'http://localhost:5173'
 ];
-
 const corsOptions = {
-    // The origin is now a function. It checks if the request's origin
-    // is in our list of allowed domains.
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
+        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
         }
-        return callback(null, true);
     },
     credentials: true,
 };
+app.use(cors(corsOptions));
+
+// The CORS middleware is the VERY FIRST middleware to be used.
 app.use(cors(corsOptions));
 
 

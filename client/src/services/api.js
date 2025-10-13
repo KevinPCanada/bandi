@@ -1,10 +1,11 @@
-// An object that centralizes all API communication functions for the application. All fetch calls use relative URLs (e.g., `/api/...`). This allows the Cloudflare proxy (defined in `public/_redirects`) to intercept these requests in production and forward them to the correct backend server.
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export const api = {
   // --- Authentication Functions ---
   register: async (userData) => {
     try {
-      const response = await fetch(`/api/auth/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
@@ -21,7 +22,7 @@ export const api = {
 
   login: async (credentials) => {
     try {
-      const response = await fetch(`/api/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -38,7 +39,7 @@ export const api = {
 
   logout: async () => {
     try {
-      await fetch(`/api/auth/logout`, { method: "POST" });
+      await fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST" });
       return { success: true };
     } catch (error) {
       console.error("Logout error:", error);
@@ -48,7 +49,7 @@ export const api = {
 
   loginAsGuest: async () => {
     try {
-      const response = await fetch(`/api/auth/guest`, { method: 'POST' });
+      const response = await fetch(`${API_BASE_URL}/api/auth/guest`, { method: 'POST' });
       if (response.ok) {
         return { success: true, user: await response.json() };
       }
@@ -61,7 +62,7 @@ export const api = {
 
   deleteAccount: async () => {
     try {
-      const response = await fetch(`/api/users/profile`, { method: "DELETE" });
+      const response = await fetch(`${API_BASE_URL}/api/users/profile`, { method: "DELETE" });
       if (response.ok) {
         return { success: true };
       }
@@ -75,7 +76,7 @@ export const api = {
   // --- Deck Functions ---
   getMyDecks: async () => {
     try {
-      const response = await fetch(`/api/decks`);
+      const response = await fetch(`${API_BASE_URL}/api/decks`);
       if (response.ok) {
         return { success: true, data: await response.json() };
       }
@@ -88,7 +89,7 @@ export const api = {
 
   getDeckById: async (id) => {
     try {
-      const response = await fetch(`/api/decks/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/decks/${id}`);
       if (response.ok) {
         return { success: true, data: await response.json() };
       }
@@ -101,7 +102,7 @@ export const api = {
 
   createDeck: async (deckData) => {
     try {
-      const response = await fetch(`/api/decks`, {
+      const response = await fetch(`${API_BASE_URL}/api/decks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(deckData),
@@ -116,7 +117,7 @@ export const api = {
 
   updateDeck: async (deckId, deckData) => {
     try {
-      const response = await fetch(`/api/decks/${deckId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/decks/${deckId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(deckData),
@@ -131,7 +132,7 @@ export const api = {
 
   deleteDeck: async (deckId) => {
     try {
-      const response = await fetch(`/api/decks/${deckId}`, { method: "DELETE" });
+      const response = await fetch(`${API_BASE_URL}/api/decks/${deckId}`, { method: "DELETE" });
       if (response.ok) {
         return { success: true };
       }
@@ -145,7 +146,7 @@ export const api = {
   // --- Card Functions ---
   addCard: async (cardData) => {
     try {
-      const response = await fetch(`/api/cards`, {
+      const response = await fetch(`${API_BASE_URL}/api/cards`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cardData),
@@ -160,7 +161,7 @@ export const api = {
 
   updateCard: async (cardId, cardData) => {
     try {
-      const response = await fetch(`/api/cards/${cardId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/cards/${cardId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cardData),
@@ -175,7 +176,7 @@ export const api = {
 
   deleteCard: async (cardId) => {
     try {
-      const response = await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
+      const response = await fetch(`${API_BASE_URL}/api/cards/${cardId}`, { method: "DELETE" });
       const data = await response.json();
       return response.ok ? { success: true, data } : { success: false, error: data.message };
     } catch (error) {
@@ -187,7 +188,7 @@ export const api = {
   // --- AI Functions ---
   generateSentenceStem: async (card, otherOptions) => {
     try {
-      const response = await fetch(`/api/gemini/generate-stem`, {
+      const response = await fetch(`${API_BASE_URL}/api/gemini/generate-stem`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -206,4 +207,3 @@ export const api = {
     }
   },
 };
-

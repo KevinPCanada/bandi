@@ -19,6 +19,8 @@ const generateToken = (res, userId) => {
     secure: process.env.NODE_ENV !== 'development', // Use secure cookies in production
     sameSite: 'none', // `sameSite: 'none'` is the crucial setting that tells the browser it's safe to send this cookie from frontend domain to backend domain. This requires the `secure: true` attribute to also be set, which the code already does in production.
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
+    // The `domain` attribute tells the browser that this cookie is valid for the root domain and all of its subdomains (like 'www' and 'api'). This creates a "master key" that will be correctly sent by all browsers, including strict mobile ones. We only set this in production.
+    domain: process.env.NODE_ENV === 'development' ? undefined : '.bandismartcards.com',
   });
 };
 

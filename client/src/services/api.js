@@ -1,6 +1,8 @@
-
+// --- API Configuration ---
+// Defines the base URL for the deployed backend, pulled from Vite's environment variables.
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
+// An object that centralizes all API communication functions for the application.
 export const api = {
   // --- Authentication Functions ---
   register: async (userData) => {
@@ -9,10 +11,10 @@ export const api = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
+        // Tells the browser to send credentials (cookies) with this request.
+        credentials: 'include',
       });
-      if (response.ok) {
-        return { success: true, data: await response.json() };
-      }
+      if (response.ok) return { success: true, data: await response.json() };
       return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Register error:", error);
@@ -26,10 +28,9 @@ export const api = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
+        credentials: 'include',
       });
-      if (response.ok) {
-        return { success: true, user: await response.json() };
-      }
+      if (response.ok) return { success: true, user: await response.json() };
       return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Login error:", error);
@@ -39,7 +40,10 @@ export const api = {
 
   logout: async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, { method: "POST" });
+      await fetch(`${API_BASE_URL}/api/auth/logout`, { 
+        method: "POST",
+        credentials: 'include',
+      });
       return { success: true };
     } catch (error) {
       console.error("Logout error:", error);
@@ -49,10 +53,11 @@ export const api = {
 
   loginAsGuest: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/guest`, { method: 'POST' });
-      if (response.ok) {
-        return { success: true, user: await response.json() };
-      }
+      const response = await fetch(`${API_BASE_URL}/api/auth/guest`, { 
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (response.ok) return { success: true, user: await response.json() };
       return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Guest login error:", error);
@@ -62,10 +67,11 @@ export const api = {
 
   deleteAccount: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/profile`, { method: "DELETE" });
-      if (response.ok) {
-        return { success: true };
-      }
+      const response = await fetch(`${API_BASE_URL}/api/users/profile`, { 
+        method: "DELETE",
+        credentials: 'include',
+      });
+      if (response.ok) return { success: true };
       return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Delete account error:", error);
@@ -76,10 +82,9 @@ export const api = {
   // --- Deck Functions ---
   getMyDecks: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/decks`);
-      if (response.ok) {
-        return { success: true, data: await response.json() };
-      }
+      // This is the function that was failing. Adding `credentials: 'include'` will fix it.
+      const response = await fetch(`${API_BASE_URL}/api/decks`, { credentials: 'include' });
+      if (response.ok) return { success: true, data: await response.json() };
       return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Get decks error:", error);
@@ -89,10 +94,8 @@ export const api = {
 
   getDeckById: async (id) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/decks/${id}`);
-      if (response.ok) {
-        return { success: true, data: await response.json() };
-      }
+      const response = await fetch(`${API_BASE_URL}/api/decks/${id}`, { credentials: 'include' });
+      if (response.ok) return { success: true, data: await response.json() };
       return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Get deck by ID error:", error);
@@ -106,6 +109,7 @@ export const api = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(deckData),
+        credentials: 'include',
       });
       const data = await response.json();
       return response.ok ? { success: true, data } : { success: false, error: data.message };
@@ -121,6 +125,7 @@ export const api = {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(deckData),
+        credentials: 'include',
       });
       const data = await response.json();
       return response.ok ? { success: true, data } : { success: false, error: data.message };
@@ -132,10 +137,11 @@ export const api = {
 
   deleteDeck: async (deckId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/decks/${deckId}`, { method: "DELETE" });
-      if (response.ok) {
-        return { success: true };
-      }
+      const response = await fetch(`${API_BASE_URL}/api/decks/${deckId}`, { 
+        method: "DELETE",
+        credentials: 'include',
+      });
+      if (response.ok) return { success: true };
       return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Delete deck error:", error);
@@ -150,6 +156,7 @@ export const api = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cardData),
+        credentials: 'include',
       });
       const data = await response.json();
       return response.ok ? { success: true, data } : { success: false, error: data.message };
@@ -165,6 +172,7 @@ export const api = {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cardData),
+        credentials: 'include',
       });
       const data = await response.json();
       return response.ok ? { success: true, data } : { success: false, error: data.message };
@@ -176,7 +184,10 @@ export const api = {
 
   deleteCard: async (cardId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/cards/${cardId}`, { method: "DELETE" });
+      const response = await fetch(`${API_BASE_URL}/api/cards/${cardId}`, { 
+        method: "DELETE",
+        credentials: 'include',
+      });
       const data = await response.json();
       return response.ok ? { success: true, data } : { success: false, error: data.message };
     } catch (error) {
@@ -196,10 +207,9 @@ export const api = {
           back: card.back,
           otherOptions: otherOptions,
         }),
+        credentials: 'include',
       });
-      if (response.ok) {
-        return { success: true, data: await response.json() };
-      }
+      if (response.ok) return { success: true, data: await response.json() };
       return { success: false, error: await response.text() };
     } catch (error) {
       console.error("Generate stem error:", error);
@@ -207,3 +217,4 @@ export const api = {
     }
   },
 };
+

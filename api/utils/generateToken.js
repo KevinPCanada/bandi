@@ -17,7 +17,7 @@ const generateToken = (res, userId) => {
   res.cookie('jwt', token, {
     httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
     secure: process.env.NODE_ENV !== 'development', // Use secure cookies in production
-    sameSite: 'strict', // Helps prevent Cross-Site Request Forgery (CSRF) attacks
+    sameSite: 'none', // `sameSite: 'none'` is the crucial setting that tells the browser it's safe to send this cookie from frontend domain to backend domain. This requires the `secure: true` attribute to also be set, which the code already does in production.
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
   });
 };

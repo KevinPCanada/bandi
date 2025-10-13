@@ -1,0 +1,3 @@
+<!-- Proxy all API requests to the Render backend -->
+/api/* https://bandi-api.onrender.com/api/:splat  200
+

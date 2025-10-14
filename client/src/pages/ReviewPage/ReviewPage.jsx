@@ -206,7 +206,7 @@ export default function ReviewPage() {
         </div>
       ) : isGenerating || !currentQuestion ? (
         // displays a loader while the AI is generating a question.
-        <Loader text="Preparing your first card..." className="text-foreground" />
+        <Loader text="Preparing your card..." className="text-foreground" />
       ) : (
         // displays the main review session content.
         <div className="w-full max-w-2xl">

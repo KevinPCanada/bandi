@@ -87,7 +87,7 @@ export default function Dashboard() {
 
   // Render different UI based on the state
   if (loading) {
-    return <div className="text-center p-10">Loading your decks...</div>;
+    return <div className="text-center p-10 text-background">Loading your decks...</div>;
   }
 
   if (error) {

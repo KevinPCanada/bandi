@@ -152,7 +152,7 @@ const EditDeckPage = () => {
   if (loading) {
     return (
       <div className="w-full h-full flex items-center justify-center">
-        <Loader text="Loading deck..." />
+        <Loader className="text-background" text="Loading deck..." />
       </div>
     );
   }

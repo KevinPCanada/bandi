@@ -3,12 +3,12 @@ import 'dotenv/config';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import connectDB from './db.js';
-import authRoutes from './routes/auth.js';
-import deckRoutes from './routes/deckRoutes.js';
-import cardRoutes from './routes/cardRoutes.js';
-import geminiRoutes from './routes/geminiRoutes.js';
-import userRoutes from './routes/userRoutes.js';
+import connectDB from '../server/db.js';
+import authRoutes from '../server/routes/auth.js';
+import deckRoutes from '../server/routes/deckRoutes.js';
+import cardRoutes from '../server/routes/cardRoutes.js';
+import geminiRoutes from '../server/routes/geminiRoutes.js';
+import userRoutes from '../server/routes/userRoutes.js';
 
 // --- Initialization ---
 const app = express();

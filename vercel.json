@@ -1,14 +1,9 @@
 {
   "version": 2,
   "name": "bandismartcards-backend",
-  "functions": {
-    "api/index.js": {
-      "includeFiles": "api/**"
-    }
-  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/(.*)",
       "destination": "/api/index.js"
     }
   ]

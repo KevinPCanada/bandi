@@ -20,11 +20,15 @@ export const generateStem = async (req, res) => {
     const now = new Date();
     let resetDate = user.apiCallResetDate;
     let callCount = user.apiCallCount;
+    // Added a flag to track if the reset period has expired.
+    let needsReset = false;
 
     // Checks if the user's call count should be reset for a new day.
     if (!resetDate || resetDate < now) {
       callCount = 0;
       resetDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      // Mark that we need to perform a reset in the database.
+      needsReset = true;
     }
 
     // Blocks the request if the user has exceeded the daily limit.
@@ -64,13 +68,18 @@ export const generateStem = async (req, res) => {
     const response = await result.response;
     const text = response.text();
 
+    // --- NEW: UPDATED DATABASE UPDATE LOGIC ---
+    // We check if a reset was triggered.
+    // If YES: We use $set to force the apiCallCount back to 1.
+    // If NO: We use $inc to add 1 to the existing count as normal.
+    const updateQuery = needsReset 
+      ? { $set: { apiCallCount: 1, apiCallResetDate: resetDate } }
+      : { $inc: { apiCallCount: 1 }, $set: { apiCallResetDate: resetDate } };
+
     // After a successful API call, updates the user's call count in the database.
     const updatedUser = await User.findByIdAndUpdate(
       req.user._id,
-      {
-        $inc: { apiCallCount: 1 },
-        $set: { apiCallResetDate: resetDate },
-      },
+      updateQuery,
       { new: true } // This option returns the updated user document.
     );
 
@@ -86,4 +95,3 @@ export const generateStem = async (req, res) => {
     res.status(500).json({ message: "Failed to generate sentence stem from AI." });
   }
 };
-

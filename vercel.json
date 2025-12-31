@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "bandismartcards-backend",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    }
+  ]
+}

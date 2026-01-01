@@ -160,7 +160,7 @@ const EditDeckPage = () => {
   if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
   if (!deck) return <div className="p-8">Deck not found.</div>;
 
-  return (
+return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 mb-8">
         <div className="w-full md:w-auto justify-self-center md:justify-self-start">
@@ -204,13 +204,9 @@ const EditDeckPage = () => {
           <p className="text-primary-foreground">{cards.length} cards</p>
         </div>
         <div className="w-full md:w-auto justify-self-center md:justify-self-end flex justify-center gap-3">
-          <Button onClick={() => navigate(`/decks/${id}/review`)} className="flex items-center gap-2">
+          <Button onClick={() => navigate(`/decks/${id}/review`)} className="flex items-center gap-2 cursor-pointer">
             <Play className="w-4 h-4" />
             Start Review
-          </Button>
-          <Button onClick={handleAddCard} variant="outline" className="flex items-center gap-2 hover:border-card hover:bg-card hover:text-foreground">
-            <Plus className="w-4 h-4" />
-            Add Card
           </Button>
         </div>
       </div>
@@ -284,9 +280,14 @@ const EditDeckPage = () => {
         </div>
       )}
 
-      <div className="mt-12 flex justify-end">
-        <Button onClick={() => setShowDeleteDialog(true)} variant="destructive" className="flex items-center gap-2">
-          <Trash2 className="w-4 h-4" />
+      <div className="mt-12 flex justify-between items-center">
+        <Button onClick={handleAddCard} variant="outline" className="flex items-center gap-2 hover:border-card hover:bg-card hover:text-foreground">
+          <Plus className="w-4 h-4" />
+          Add Card
+        </Button>
+
+        <Button onClick={() => setShowDeleteDialog(true)} variant="destructive" className="flex items-center gap-2 cursor-pointer">
+          <Trash2 className="w-4 h-4 " />
           Delete Deck
         </Button>
       </div>

@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
+import Loader from "../../components/Loader";
 
 import { Card, CardContent } from "../../components/ui/card";
 
@@ -87,9 +88,12 @@ export default function Dashboard() {
 
   // Render different UI based on the state
   if (loading) {
-    return <div className="text-center p-10 text-background">Loading your decks...</div>;
+    return (
+      <div className="w-full h-full flex items-center justify-center p-10">
+        <Loader text="Loading your decks..." className="text-primary-foreground" />
+      </div>
+    );
   }
-
   if (error) {
     return <div className="text-center p-10 text-red-500">{error}</div>;
   }

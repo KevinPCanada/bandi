@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Play, Trash2, Edit3, Save } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ArrowLeft, Plus, Play, Trash2, Edit3, Save, AlertTriangle } from "lucide-react";
+// Using relative paths to ensure resolution across different build environments
+import { Button } from "../../components/ui/button";
+import { Card, CardContent } from "../../components/ui/card";
+import { Textarea } from "../../components/ui/textarea";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -14,9 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import Loader from "@/components/Loader";
-import { api } from "@/services/api";
+} from "../../components/ui/dialog";
+import Loader from "../../components/Loader";
+import { api } from "../../services/api";
 import { toast } from "sonner"; // Assuming sonner is available for feedback
 
 const EditDeckPage = () => {
@@ -30,6 +31,10 @@ const EditDeckPage = () => {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // --- Navigation Guard State ---
+  const [showNavigationDialog, setShowNavigationDialog] = useState(false);
+  const [pendingPath, setPendingPath] = useState(null);
 
   // State for inline card editing
   const [editingCardId, setEditingCardId] = useState(null);
@@ -66,6 +71,39 @@ const EditDeckPage = () => {
   const hasChanges =
     JSON.stringify(cards) !== JSON.stringify(originalCards) ||
     deletedCardIds.length > 0;
+
+  // --- Browser-Level Guard (Tab Close/Refresh) ---
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasChanges]);
+
+  // --- Navigation Guard Handlers ---
+  const handleProtectedNavigation = (path) => {
+    if (hasChanges) {
+      setPendingPath(path);
+      setShowNavigationDialog(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const handleDiscardAndLeave = () => {
+    setShowNavigationDialog(false);
+    navigate(pendingPath);
+  };
+
+  const handleSaveAndLeave = async () => {
+    await handleSaveChanges();
+    setShowNavigationDialog(false);
+    navigate(pendingPath);
+  };
 
   // --- Card Operations (Local State Only) ---
 
@@ -208,7 +246,7 @@ const EditDeckPage = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/")}
+            onClick={() => handleProtectedNavigation("/")}
             className="flex items-center gap-2 text-primary-foreground hover:text-white"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -263,7 +301,7 @@ const EditDeckPage = () => {
         </div>
         <div className="w-full md:w-auto justify-self-center md:justify-self-end flex justify-center gap-3">
           <Button
-            onClick={() => navigate(`/decks/${id}/review`)}
+            onClick={() => handleProtectedNavigation(`/decks/${id}/review`)}
             className="flex items-center gap-2 cursor-pointer"
           >
             <Play className="w-4 h-4" />
@@ -431,6 +469,42 @@ const EditDeckPage = () => {
           Delete Deck
         </Button>
       </div>
+
+      {/* --- NEW: Navigation Guard Dialog --- */}
+      <Dialog open={showNavigationDialog} onOpenChange={setShowNavigationDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="w-5 h-5" /> Unsaved Changes
+            </DialogTitle>
+            <DialogDescription className="py-2 text-base text-foreground">
+              You have unsaved modifications in <strong>{deck?.name}</strong>. Would you like to save them before leaving?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={handleDiscardAndLeave} 
+              className="sm:mr-auto text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            >
+              Discard Changes
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => setShowNavigationDialog(false)}
+            >
+              Stay Here
+            </Button>
+            <Button 
+              onClick={handleSaveAndLeave} 
+              className="bg-primary text-primary-foreground"
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving..." : "Save & Leave"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>

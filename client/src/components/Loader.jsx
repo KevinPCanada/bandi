@@ -10,7 +10,7 @@ const Loader = ({ text, className }) => {
           to change the color, size, etc. from outside the component.
       */}
       <Loader2 className={cn("h-8 w-8 animate-spin text-primary-foreground", className)} />
-      <p className="text-muted-foreground">{text}</p>
+      <p>{text}</p>
     </div>
   );
 };

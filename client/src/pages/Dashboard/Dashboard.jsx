@@ -88,8 +88,8 @@ export default function Dashboard() {
 
   // Render different UI based on the state
   if (loading) {
-    return (
-      <div className="w-full h-full flex items-center justify-center p-10">
+    return ( 
+      <div className="text-primary-foreground w-full h-full flex items-center justify-center p-10">
         <Loader text="Loading your decks..." className="text-primary-foreground" />
       </div>
     );

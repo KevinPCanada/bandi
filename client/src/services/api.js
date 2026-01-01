@@ -149,6 +149,22 @@ export const api = {
     }
   },
 
+  syncDeck: async (deckId, syncData) => {
+    try {
+      const response = await fetch(`/api/decks/${deckId}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(syncData),
+      });
+      if (response.ok) return { success: true, data: await response.json() };
+      const errorText = await response.text();
+      return { success: false, error: errorText || "Failed to sync changes" };
+    } catch (error) {
+      console.error("Sync deck error:", error);
+      return { success: false, error: "A network error occurred." };
+    }
+  },
+
   // --- Card Functions ---
   addCard: async (cardData) => {
     try {

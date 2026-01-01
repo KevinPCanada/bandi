@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Play, Trash2, Edit3 } from "lucide-react";
+import { ArrowLeft, Plus, Play, Trash2, Edit3, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input"; // Import the Input component
-import { Label } from "@/components/ui/label"; // Import the Label component
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -17,14 +17,18 @@ import {
 } from "@/components/ui/dialog";
 import Loader from "@/components/Loader";
 import { api } from "@/services/api";
+import { toast } from "sonner"; // Assuming sonner is available for feedback
 
 const EditDeckPage = () => {
-  const { id } = useParams(); // Get deck ID from the URL
+  const { id } = useParams();
   const navigate = useNavigate();
 
   const [deck, setDeck] = useState(null);
   const [cards, setCards] = useState([]);
+  const [originalCards, setOriginalCards] = useState([]); // For change detection
+  const [deletedCardIds, setDeletedCardIds] = useState([]); // Track existing cards to delete
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
   // State for inline card editing
@@ -46,7 +50,9 @@ const EditDeckPage = () => {
       const result = await api.getDeckById(id);
       if (result.success) {
         setDeck(result.data.deck);
-        setCards(result.data.cards);
+        const fetchedCards = result.data.cards || [];
+        setCards(fetchedCards);
+        setOriginalCards(JSON.parse(JSON.stringify(fetchedCards)));
         setNewDeckName(result.data.deck.name);
       } else {
         setError(result.error);
@@ -56,27 +62,21 @@ const EditDeckPage = () => {
     fetchDeck();
   }, [id]);
 
-  const handleBack = () => navigate("/");
-  const handleStartReview = (e) => {
-    e.stopPropagation();
-    navigate(`/decks/${deck._id}/review`);
-  };
+  // --- Change Detection ---
+  const hasChanges =
+    JSON.stringify(cards) !== JSON.stringify(originalCards) ||
+    deletedCardIds.length > 0;
 
-  // --- Card CRUD Operations ---
+  // --- Card Operations (Local State Only) ---
 
-  const handleAddCard = async () => {
-    const result = await api.addCard({
+  const handleAddCard = () => {
+    const newCard = {
+      _id: `temp-${Date.now()}`, // Temporary ID for client-side tracking
       front: "",
       back: "",
-      deckId: id,
-    });
-    if (result.success) {
-      const newCard = result.data;
-      setCards([...cards, newCard]);
-      handleEditCard(newCard); // Immediately enter edit mode for the new card
-    } else {
-      console.error("Failed to add card:", result.error);
-    }
+    };
+    setCards([...cards, newCard]);
+    handleEditCard(newCard); // Immediately enter edit mode for the new card
   };
 
   const handleEditCard = (card) => {
@@ -85,23 +85,16 @@ const EditDeckPage = () => {
     setEditBack(card.back);
   };
 
-  const handleSaveCard = async () => {
-    const result = await api.updateCard(editingCardId, {
-      front: editFront,
-      back: editBack,
-    });
-    if (result.success) {
-      setCards(
-        cards.map((card) =>
-          card._id === editingCardId
-            ? { ...card, front: editFront, back: editBack }
-            : card
-        )
-      );
-      handleCancelEdit();
-    } else {
-      console.error("Failed to save card:", result.error);
-    }
+  // This replaces handleSaveCard: Updates local state instead of calling API
+  const handleUpdateCardInState = () => {
+    setCards(
+      cards.map((card) =>
+        card._id === editingCardId
+          ? { ...card, front: editFront, back: editBack }
+          : card
+      )
+    );
+    handleCancelEdit();
   };
 
   const handleCancelEdit = () => {
@@ -110,31 +103,65 @@ const EditDeckPage = () => {
     setEditBack("");
   };
 
-  const handleDeleteCard = async (cardId) => {
+  const handleDeleteCard = (cardId) => {
     if (confirm("Are you sure you want to delete this card?")) {
-        const result = await api.deleteCard(cardId);
-        if (result.success) {
-            setCards(cards.filter((card) => card._id !== cardId));
-        } else {
-            console.error("Failed to delete card:", result.error);
-        }
+      // If it's a real card (not a temp one), track for DB deletion
+      if (!cardId.toString().startsWith("temp-")) {
+        setDeletedCardIds([...deletedCardIds, cardId]);
+      }
+      setCards(cards.filter((card) => card._id !== cardId));
     }
   };
 
-  // handler for deleting the entire deck
+  // --- Bulk Sync Operation ---
+  const handleSaveChanges = async () => {
+    setIsSaving(true);
+
+    // Split cards into new and existing
+    const cardsToCreate = cards
+      .filter((c) => c._id.toString().startsWith("temp-"))
+      .map(({ front, back }) => ({ front, back }));
+
+    const cardsToUpdate = cards
+      .filter((c) => !c._id.toString().startsWith("temp-"))
+      .map(({ _id, front, back }) => ({ _id, front, back }));
+
+    const syncData = {
+      cardsToCreate,
+      cardsToUpdate,
+      cardsToDelete: deletedCardIds,
+    };
+
+    const result = await api.syncDeck(id, syncData);
+
+    if (result.success) {
+      toast.success("Changes saved successfully!");
+      // Update state with fresh data from server (real IDs for new cards)
+      const syncedCards = result.data.cards;
+      setCards(syncedCards);
+      setOriginalCards(JSON.parse(JSON.stringify(syncedCards)));
+      setDeletedCardIds([]);
+    } else {
+      toast.error("Failed to save changes.");
+      console.error("Sync error:", result.error);
+    }
+    setIsSaving(false);
+  };
+
+  // --- Deck Operations ---
+
   const handleDeleteDeck = async () => {
     const result = await api.deleteDeck(id);
     if (result.success) {
       setShowDeleteDialog(false);
-      navigate("/"); // Navigate back to the dashboard after deletion
+      navigate("/");
     } else {
       console.error("Failed to delete deck:", result.error);
       setShowDeleteDialog(false);
     }
   };
 
-  // Handler for renaming the deck 
-    const handleRenameDeck = async (e) => {
+  const handleRenameDeck = async (e) => {
     e.preventDefault();
     if (!newDeckName.trim() || newDeckName.trim() === deck.name) {
       setIsRenameDialogOpen(false);
@@ -142,7 +169,7 @@ const EditDeckPage = () => {
     }
     const result = await api.updateDeck(id, { name: newDeckName.trim() });
     if (result.success) {
-      setDeck(result.data); // Update the deck state with the new data
+      setDeck(result.data);
       setIsRenameDialogOpen(false);
     } else {
       console.error("Failed to rename deck:", result.error);
@@ -160,17 +187,39 @@ const EditDeckPage = () => {
   if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
   if (!deck) return <div className="p-8">Deck not found.</div>;
 
-return (
+  return (
     <div className="container mx-auto px-4 py-8">
+      {/* Defining a custom "bob" animation here so it's self-contained. 
+        This will make the Save Changes button move slightly up and down.
+      */}
+      <style>
+        {`
+          @keyframes bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+          }
+          .animate-bob {
+            animation: bob 2s ease-in-out infinite;
+          }
+        `}
+      </style>
       <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 mb-8">
         <div className="w-full md:w-auto justify-self-center md:justify-self-start">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="flex items-center gap-2 text-primary-foreground hover:text-white">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 text-primary-foreground hover:text-white"
+          >
             <ArrowLeft className="w-4 h-4" />
             Back to Decks
           </Button>
         </div>
         <div className="text-center order-first md:order-none">
-          <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+          <Dialog
+            open={isRenameDialogOpen}
+            onOpenChange={setIsRenameDialogOpen}
+          >
             <DialogTrigger asChild>
               <h1 className="relative inline-block text-3xl font-bold text-primary-foreground group cursor-pointer p-2">
                 {deck?.name}
@@ -184,7 +233,9 @@ return (
               <form onSubmit={handleRenameDeck}>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="deck-name" className="text-right">Name</Label>
+                    <Label htmlFor="deck-name" className="text-right">
+                      Name
+                    </Label>
                     <Input
                       id="deck-name"
                       value={newDeckName}
@@ -195,7 +246,14 @@ return (
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="button" variant="outline" className="hover:bg-primary hover:border-primary" onClick={() => setIsRenameDialogOpen(false)}>Cancel</Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="hover:bg-primary hover:border-primary"
+                    onClick={() => setIsRenameDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
                   <Button type="submit">Save Changes</Button>
                 </DialogFooter>
               </form>
@@ -204,7 +262,10 @@ return (
           <p className="text-primary-foreground">{cards.length} cards</p>
         </div>
         <div className="w-full md:w-auto justify-self-center md:justify-self-end flex justify-center gap-3">
-          <Button onClick={() => navigate(`/decks/${id}/review`)} className="flex items-center gap-2 cursor-pointer">
+          <Button
+            onClick={() => navigate(`/decks/${id}/review`)}
+            className="flex items-center gap-2 cursor-pointer"
+          >
             <Play className="w-4 h-4" />
             Start Review
           </Button>
@@ -214,43 +275,90 @@ return (
       {cards.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cards.map((card) => (
-            <Card key={card._id} className="hover:shadow-md transition-shadow bg-white text-foreground">
+            <Card
+              key={card._id}
+              className={`hover:shadow-md transition-shadow bg-white text-foreground ${
+                card._id.toString().startsWith("temp-")
+                  ? "border-primary border-2"
+                  : ""
+              }`}
+            >
               <CardContent className="p-6">
                 {editingCardId === card._id ? (
                   <div className="space-y-4">
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground mb-2 block">Front</label>
-                      <Textarea value={editFront} onChange={(e) => setEditFront(e.target.value)} className="min-h-[80px]" placeholder="e.g., 'Hello' or a definition"/>
+                      <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                        Front
+                      </label>
+                      <Textarea
+                        value={editFront}
+                        onChange={(e) => setEditFront(e.target.value)}
+                        className="min-h-[80px]"
+                        placeholder="e.g., 'Hello' or a definition"
+                      />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground mb-2 block">Back</label>
-                      <Textarea value={editBack} onChange={(e) => setEditBack(e.target.value)} className="min-h-[80px]" placeholder="e.g., '안녕하세요' or the term"/>
+                      <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                        Back
+                      </label>
+                      <Textarea
+                        value={editBack}
+                        onChange={(e) => setEditBack(e.target.value)}
+                        className="min-h-[80px]"
+                        placeholder="e.g., '안녕하세요' or the term"
+                      />
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={handleSaveCard}>Save</Button>
-                      <Button size="sm" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+                      <Button size="sm" onClick={handleUpdateCardInState}>
+                        Done
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleCancelEdit}
+                      >
+                        Cancel
+                      </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Front</h4>
-                      <p className="text-foreground font-medium">{card.front}</p>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                        Front
+                      </h4>
+                      <p className="text-foreground font-medium">
+                        {card.front || (
+                          <span className="italic text-muted-foreground text-xs">
+                            (Empty)
+                          </span>
+                        )}
+                      </p>
                     </div>
                     <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-2">Back</h4>
-                      <p className="text-foreground">{card.back}</p>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                        Back
+                      </h4>
+                      <p className="text-foreground">
+                        {card.back || (
+                          <span className="italic text-muted-foreground text-xs">
+                            (Empty)
+                          </span>
+                        )}
+                      </p>
                     </div>
                     <div className="flex gap-2 pt-2">
-                      <Button variant="outline" onClick={() => handleEditCard(card)} className="flex items-center gap-2 bg-background hover:border-primary"
->
+                      <Button
+                        variant="outline"
+                        onClick={() => handleEditCard(card)}
+                        className="flex items-center gap-2 bg-background hover:border-primary"
+                      >
                         <Edit3 className="w-4 h-4" /> Edit
                       </Button>
                       <Button
                         variant="outline"
                         onClick={() => handleDeleteCard(card._id)}
-                        className="flex items-center gap-2 text-foreground hover:bg-red-600 bg-card hover:text-white
-                          hover:border-red-600"
+                        className="flex items-center gap-2 text-foreground hover:bg-red-600 bg-card hover:text-white hover:border-red-600"
                       >
                         <Trash2 className="w-4 h-4" /> Delete
                       </Button>
@@ -269,11 +377,15 @@ return (
                 Let's Add Your First Card!
               </h3>
               <p className="text-primary-foreground/80 mt-2 max-w-sm">
-                For the best AI quiz experience, enter the English word on the 'Front' and the Korean translation on the 'Back'.
+                For the best AI quiz experience, enter the English word on the
+                'Front' and the Korean translation on the 'Back'.
               </p>
-              <Button onClick={handleAddCard} variant="outline" className="flex items-center gap-2 mt-6 hover:bg-card hover:text-foreground">
-                <Plus className="w-4 h-4" />
-                Add First Card
+              <Button
+                onClick={handleAddCard}
+                variant="outline"
+                className="flex items-center gap-2 mt-6 hover:bg-card hover:text-foreground"
+              >
+                <Plus className="w-4 h-4" /> Add First Card
               </Button>
             </CardContent>
           </Card>
@@ -281,12 +393,40 @@ return (
       )}
 
       <div className="mt-12 flex justify-between items-center">
-        <Button onClick={handleAddCard} variant="outline" className="flex items-center gap-2 hover:border-card hover:bg-card hover:text-foreground">
-          <Plus className="w-4 h-4" />
-          Add Card
-        </Button>
+        <div className="flex gap-4">
+          <Button
+            onClick={handleAddCard}
+            variant="outline"
+            className="flex items-center gap-2 hover:border-card hover:bg-card hover:text-foreground"
+          >
+            <Plus className="w-4 h-4" />
+            Add Card
+          </Button>
 
-        <Button onClick={() => setShowDeleteDialog(true)} variant="destructive" className="flex items-center gap-2 cursor-pointer">
+          {/* "Save Changes" button, only visible when changes exist */}
+          {hasChanges && (
+            <Button
+              onClick={handleSaveChanges}
+              disabled={isSaving}
+              className={`flex items-center gap-2 bg-primary animate-in fade-in zoom-in-95 shadow-md cursor-pointer transition-all ${
+                !isSaving ? "animate-bob" : ""
+              }`}
+            >
+              {isSaving ? (
+                <span className="h-4 w-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              Save Changes
+            </Button>
+          )}
+        </div>
+
+        <Button
+          onClick={() => setShowDeleteDialog(true)}
+          variant="destructive"
+          className="flex items-center gap-2 cursor-pointer"
+        >
           <Trash2 className="w-4 h-4 " />
           Delete Deck
         </Button>
@@ -297,11 +437,16 @@ return (
           <DialogHeader>
             <DialogTitle>Delete Deck</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{deck?.name}"? This action cannot be undone and will permanently delete all {cards.length} cards in this deck.
+              Are you sure you want to delete "{deck?.name}"? This action cannot
+              be undone and will permanently delete all {cards.length} cards in
+              this deck.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button className="bg-background border-card text-foreground hover:border-primary hover:text-background" onClick={() => setShowDeleteDialog(false)}>
+            <Button
+              className="bg-background border-card text-foreground hover:border-primary hover:text-background"
+              onClick={() => setShowDeleteDialog(false)}
+            >
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteDeck}>

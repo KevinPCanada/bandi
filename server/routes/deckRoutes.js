@@ -5,7 +5,8 @@ import {
   getMyDecks,
   getDeckById,
   updateDeck,
-  deleteDeck
+  deleteDeck,
+  syncDeckCards
 } from '../controllers/deckController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -17,5 +18,8 @@ router.route('/:id')
   .get(protect, getDeckById)
   .put(protect, updateDeck)
   .delete(protect, deleteDeck);
+
+//The bulk sync route for saving all changes at once. This maps to POST /api/decks/:id/sync
+router.route('/:id/sync').post(protect, syncDeckCards);
 
 export default router;

@@ -80,6 +80,36 @@ export const api = {
   },
 
   // --- Deck Functions ---
+
+  syncDeck: async (deckId, syncData) => {
+    try {
+      console.log("Attempting sync for deck:", deckId);
+      const response = await fetch(`${API_BASE_URL}/api/decks/${deckId}/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(syncData),
+        credentials: 'include', 
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Sync successful:", data);
+        return { success: true, data };
+      }
+
+      // IMPROVED ERROR HANDLING: Capture specific error messages from backend
+      const errorData = await response.json().catch(() => ({}));
+      const errorText = errorData.message || await response.text() || "Unknown server error";
+      
+      console.error(`Sync failed with status ${response.status}:`, errorText);
+      return { success: false, error: errorText };
+
+    } catch (error) {
+      console.error("Critical Sync Error:", error);
+      return { success: false, error: "A network error occurred. Check your internet connection." };
+    }
+  },
+
   getMyDecks: async () => {
     try {
       // This is the function that was failing. Adding `credentials: 'include'` will fix it.
@@ -149,21 +179,6 @@ export const api = {
     }
   },
 
-  syncDeck: async (deckId, syncData) => {
-    try {
-      const response = await fetch(`/api/decks/${deckId}/sync`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(syncData),
-      });
-      if (response.ok) return { success: true, data: await response.json() };
-      const errorText = await response.text();
-      return { success: false, error: errorText || "Failed to sync changes" };
-    } catch (error) {
-      console.error("Sync deck error:", error);
-      return { success: false, error: "A network error occurred." };
-    }
-  },
 
   // --- Card Functions ---
   addCard: async (cardData) => {

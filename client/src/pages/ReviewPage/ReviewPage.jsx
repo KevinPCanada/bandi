@@ -93,8 +93,11 @@ export default function ReviewPage() {
         }
 
         let questionText;
+        let isAI = false; // New flag to track AI status
+        
         if (rateLimitHit) {
           questionText = currentCard.front;
+          isAI = false;
         } else {
           const aiResult = await api.generateSentenceStem(
             currentCard,
@@ -102,6 +105,7 @@ export default function ReviewPage() {
           );
           if (aiResult.success) {
             questionText = aiResult.data.sentenceStem;
+            isAI = true; // AI was successful
             updateUser({ apiCallCount: aiResult.data.apiCallCount });
           } else {
             if (
@@ -119,6 +123,7 @@ export default function ReviewPage() {
             }
             console.error("AI generation failed, using fallback question.");
             questionText = currentCard.front;
+            isAI = false; // AI failed or hit limit
           }
         }
 
@@ -128,6 +133,7 @@ export default function ReviewPage() {
           correctAnswer: currentCard.back,
           fullAnswerText: `${currentCard.back} - ${currentCard.front}`,
           options,
+          isAI, // Store the AI status in the question object
         });
         setIsGenerating(false);
       } else if (cards.length > 0 && currentCardIndex >= cards.length) {
@@ -226,6 +232,7 @@ export default function ReviewPage() {
               answerContent={currentQuestion.fullAnswerText}
               feedback={feedback}
               animationKey={currentCardIndex}
+              isAI={currentQuestion.isAI} // Pass the status to the flashcard
             />
             {/* container for the multiple-choice answer buttons. */}
             <div className="flex flex-col gap-3 justify-center mt-8">

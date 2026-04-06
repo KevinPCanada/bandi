@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import AmgiLogo from "@/components/AmgiLogo";
+import BandiLogo from "@/components/BandiLogo";
 import { BookOpen, Sparkles } from "lucide-react";
 
 export default function Register() {
@@ -141,7 +141,7 @@ export default function Register() {
                 Create Your Account
               </CardTitle>
               <CardDescription className="text-base">
-                Get started with Amgi for free.
+                Get started with Bandi for free.
               </CardDescription>
             </CardHeader>
             <CardContent>

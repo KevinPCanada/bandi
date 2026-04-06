@@ -1,5 +1,5 @@
 
-const AmgiLogo = ({ className }) => {
+const BandiLogo = ({ className }) => {
   return (
     // The viewBox is taken directly from your Illustrator file.
     // The className prop is passed down so you can control the size from outside.
@@ -79,5 +79,5 @@ const AmgiLogo = ({ className }) => {
   );
 };
 
-export default AmgiLogo;
+export default BandiLogo;
 

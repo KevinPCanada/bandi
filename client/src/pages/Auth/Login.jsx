@@ -11,7 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import AmgiLogo from "@/components/AmgiLogo";
+import BandiLogo from "@/components/BandiLogo";
 
 import { BookOpen, Sparkles } from "lucide-react";
 

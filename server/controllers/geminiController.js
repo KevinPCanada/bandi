@@ -5,7 +5,7 @@ import User from "../models/User.js";
 // Initializes the Google AI client with the API key.
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 // Defines the daily limit for AI calls per user.
-const DAILY_API_LIMIT = 100;
+const DAILY_API_LIMIT = 1000;
 
 // Main controller function to generate a sentence stem for a flashcard.
 export const generateStem = async (req, res) => {

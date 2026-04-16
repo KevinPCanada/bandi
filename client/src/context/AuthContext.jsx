@@ -6,7 +6,7 @@ import { api } from "../services/api";
 const AuthContext = createContext();
 
 // Defines the daily AI call limit. This is a frontend copy for UI purposes.
-const DAILY_API_LIMIT = 100;
+const DAILY_API_LIMIT = 1000;
 
 // --- Custom Hook: useAuth ---
 // A custom hook that simplifies accessing the AuthContext from any component.
